@@ -68,5 +68,7 @@ Contributions are welcome! If you have any ideas for improvements or new feature
 This project is licensed under the [MIT License](LICENSE).
 
 ---
+## Home Page
+<img src="https://github.com/vnr235/OLX-Project/assets/136591900/6f0d6eb7-5daf-49e8-bab9-b2285a33c9b0"/>
 
 Feel free to further customize this README to better reflect your project's specific details or requirements. Let me know if you need any more help!
