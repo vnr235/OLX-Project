@@ -24,14 +24,14 @@ app.use(bodyParser.urlencoded({ extended: false }));
 const port = 4000
 const mongoose= require ('mongoose');
 
-mongoose.connect('mongodb://localhost:27017/mini')
+mongoose.connect('mongodb://localhost:27017/surya')
 
-const users= mongoose.model('Users',{
+const users= mongoose.model('datas',{
     username: String,
     password: String,
     likedProducts : [{ type: mongoose.Schema.Types.ObjectId, ref: 'Products'}]
 });
-const Products= mongoose.model('Products',{pname: String, pdesc: String, price: String, category: String, pimage: String });
+const Products= mongoose.model('datas',{pname: String, pdesc: String, price: String, category: String, pimage: String });
 app.get('/',(req,res)=>{
     res.send("Hello World")
 })
