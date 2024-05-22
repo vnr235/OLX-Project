@@ -1,49 +1,158 @@
-const express = require('express')
-const cors = require('cors')
-const path = require('path');
-var jwt = require('jsonwebtoken');
-const multer = require('multer')
-const productController = require('./controllers/productController');
-const userController = require('./controllers/userController');
+const mongoose = require('mongoose');
 
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads')
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-        cb(null, file.fieldname + '-' + uniqueSuffix)
+
+let schema = new mongoose.Schema({
+    pname: String,
+    pdesc: String,
+    price: String,
+    category: String,
+    pimage: String,
+    pimage2: String,
+    addedBy: mongoose.Schema.Types.ObjectId,
+    pLoc: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number]
+        }
     }
 })
 
-const upload = multer({ storage: storage })
-const bodyParser = require('body-parser')
-const app = express()
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+schema.index({ pLoc: '2dsphere' });
 
-const port = 4000
-const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost:27017/mini')
+const Products = mongoose.model('Products', schema);
 
-app.get('/', (req, res) => {
-    res.send('hello...')
+
+module.exports.search = (req, res) => {
+
+    console.log(req.query)
+
+    let latitude = req.query.loc.split(',')[0]
+    let longitude = req.query.loc.split(',')[1]
+
+    let search = req.query.search;
+    Products.find({
+        $or: [
+            { pname: { $regex: search } },
+            { pdesc: { $regex: search } },
+            { price: { $regex: search } },
+        ],
+        pLoc: {
+            $near: {
+                $geometry: {
+                    type: 'Point',
+                    coordinates: [parseFloat(latitude), parseFloat(longitude)]
+                },
+                $maxDistance: 500 * 1000,
+            }
+
+        }
+    })
+        .then((results) => {
+            res.send({ message: 'success', products: results })
+        })
+        .catch((err) => {
+            res.send({ message: 'server err' })
+        })
+}
+
+module.exports.addProduct = (req, res) => {
+
+    console.log(req.files);
+    console.log(req.body);
+
+
+    const plat = req.body.plat;
+    const plong = req.body.plong;
+    const pname = req.body.pname;
+    const pdesc = req.body.pdesc;
+    const price = req.body.price;
+    const category = req.body.category;
+    const pimage = req.files.pimage[0].path;
+    const pimage2 = req.files.pimage2[0].path;
+    const addedBy = req.body.userId;
+
+    const product = new Products({
+        pname, pdesc, price, category, pimage, pimage2, addedBy, pLoc: {
+            type: 'Point', coordinates: [plat, plong]
+        }
+    });
+    product.save()
+        .then(() => {
+            res.send({ message: 'saved success.' })
+        })
+        .catch(() => {
+            res.send({ message: 'server err' })
+        })
+}
+
+
+module.exports.getProducts = (req, res) => {
+
+    const catName = req.query.catName;
+    let _f = {}
+
+    if (catName) {
+        _f = { category: catName }
+    }
+
+    Products.find(_f)
+        .then((result) => {
+            res.send({ message: 'success', products: result })
+
+        })
+        .catch((err) => {
+            res.send({ message: 'server err' })
+        })
+
+}
+
+module.exports.getProductsById = (req, res) => {
+    console.log(req.params);
+
+    Products.findOne({ _id: req.params.pId })
+        .then((result) => {
+            res.send({ message: 'success', product: result })
+        })
+        .catch((err) => {
+            res.send({ message: 'server err' })
+        })
+
+}
+
+module.exports.myProducts = (req, res) => {
+
+    const userId = req.body.userId;
+
+    Products.find({ addedBy: userId })
+        .then((result) => {
+            res.send({ message: 'success', products: result })
+        })
+        .catch((err) => {
+            res.send({ message: 'server err' })
+        })
+
+}
+
+module.exports.deleteProduct= (req,res) =>{
+
+Products.findOne({_id : req.body.pid })
+.then((res)=>{
+    if(res.addedBy == req.body.userId ){
+        Products.deleteOne({_id : req.body.pid })
+        .then((deleteResult)=>{
+            console.log(deleteResult);
+        })
+        .catch(()=>{
+            res.send({message : 'server err'});
+        })
+    }
+})
+.catch((err)=>{
+    res.send({message: 'server err'})
 })
 
-app.get('/search', productController.search)
-app.post('/like-product', userController.likeProducts)
-app.post('/add-product', upload.fields([{ name: 'pimage' }, { name: 'pimage2' }]), productController.addProduct)
-app.get('/get-products', productController.getProducts)
-app.get('/get-product/:pId', productController.getProductsById)
-app.post('/liked-products', userController.likedProducts)
-app.post('/my-products', productController.myProducts)
-app.post('/signup', userController.signup)
-app.get('/my-profile/:userId', userController.myProfileById)
-app.get('/get-user/:uId', userController.getUserById)
-app.post('/login', userController.login)
-
-app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
-})
+}

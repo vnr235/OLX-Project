@@ -23,6 +23,10 @@ module.exports.likeProducts = (req, res) => {
 
 }
 
+module.exports.deleteProduct= (req,res)=>{
+    
+}
+
 module.exports.signup = (req, res) => {
     const username = req.body.username;
     const password = req.body.password;

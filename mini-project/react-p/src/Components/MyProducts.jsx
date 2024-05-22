@@ -78,6 +78,27 @@ function MyProducts() {
 
     }
 
+    const handleDel= (pid) =>{
+        if(!localStorage.getItem('userId')){
+            alert('Please Login First');
+            return;
+        }
+        const url = API_URL + '/delete-product/';
+        const data={
+            pid,
+            userId : localStorage.getItem('userId')
+        }
+        axios.post(url, data)
+        .then((res) => {
+            if (res.data.message) {
+                alert('Deleted.')
+            }
+        })
+        .catch((err) => {
+            alert('Server Err.')
+            })
+    }
+
 
     return (
         <div>
@@ -119,6 +140,7 @@ function MyProducts() {
                                 <p className="m-2"> {item.pname}  | {item.category} </p>
                                 <h3 className="m-2 text-danger"> {item.price} </h3>
                                 <p className="m-2 text-success"> {item.pdesc} </p>
+                                <button onclick={()=>handleDel(item._id)}>Delete Product</button>
                             </div>
                         )
 
