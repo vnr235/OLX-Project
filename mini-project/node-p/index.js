@@ -31,6 +31,18 @@ mongoose.connect('mongodb://localhost:27017/mini')
 app.get('/', (req, res) => {
     res.send('hello...')
 })
+const mongoose= require ('mongoose');
+
+
+const users= mongoose.model('datas',{
+    username: String,
+    password: String,
+    likedProducts : [{ type: mongoose.Schema.Types.ObjectId, ref: 'Products'}]
+});
+const Products= mongoose.model('datas',{pname: String, pdesc: String, price: String, category: String, pimage: String });
+app.get('/',(req,res)=>{
+    res.send("Hello World");
+})
 
 app.get('/search', productController.search)
 app.post('/like-product', userController.likeProducts)
